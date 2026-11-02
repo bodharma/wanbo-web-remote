@@ -1,0 +1,27 @@
+services:
+  remote:
+    image: ${IMAGE:-ghcr.io/bodharma/wanbo-web-remote:0.1.0}
+    build: .
+    init: true
+    restart: unless-stopped
+    environment:
+      PROJECTOR_HOST: ${PROJECTOR_HOST:?Set PROJECTOR_HOST in your .env file}
+      PROJECTOR_PORT: ${PROJECTOR_PORT:-5555}
+      PROJECTOR_SERIAL: ${PROJECTOR_SERIAL:?Set PROJECTOR_SERIAL in your .env file}
+      WEB_ORIGIN: http://127.0.0.1:${WEB_PORT:-8765}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8765}:8765"
+    volumes:
+      - adb-keys:/home/remote/.android
+      - state:/var/lib/wanbo-remote
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  adb-keys:
+  state:

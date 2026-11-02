@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="uk">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wanbo · Пульт</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101318;color:#edf0f5}*{box-sizing:border-box}body{margin:0;padding:30px;max-width:1300px;margin-inline:auto}header{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:24px}h1{font-size:26px;margin:0}p{color:#aab4c3;line-height:1.5}.tag{font-size:13px;color:#9adbc9;background:#19332e;padding:8px 12px;border-radius:20px}main{display:grid;grid-template-columns:340px 1fr;gap:24px}.panel{background:#1a2029;border:1px solid #303a48;border-radius:20px;padding:22px}button{font:inherit;font-weight:600;min-height:58px;border:1px solid #455266;border-radius:12px;background:#293444;color:#fff;cursor:pointer;touch-action:manipulation}button:hover{background:#394b62}button:focus-visible{outline:3px solid #9adbc9;outline-offset:3px}button:active{transform:translateY(1px)}button:disabled{opacity:.45;cursor:wait}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0}.pad button{height:78px;font-size:26px}.pad .ok{background:#a0e3d0;color:#102b23;font-size:20px;border-color:#a0e3d0}.up{grid-column:2}.left{grid-column:1}.down{grid-column:2}.audio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px}.wide{width:100%}.screenbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}.screenbar h2{font-size:17px;margin:0}.screenbar button{padding:0 18px}.preview{min-height:250px;display:grid;place-items:center;background:#0b0e12;border-radius:12px;overflow:hidden}.preview p{text-align:center;padding:24px}img{display:none;width:100%;height:auto}.hint{font-size:13px;margin-bottom:0}#status{min-height:44px;font-size:14px;color:#9adbc9;margin-top:18px;margin-bottom:0}@media(max-width:800px){body{padding:18px}main{grid-template-columns:1fr}.panel{padding:18px}.pad{max-width:340px;margin-inline:auto}.preview{min-height:180px}}@media(prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+<header><h1>Wanbo <span data-i18n="pageSuffix" style="font-weight:400;color:#aab4c3">/ пульт</span></h1><div style="display:flex;align-items:center;gap:12px"><span class="tag" data-i18n="localTag">На цьому комп'ютері</span><select id="language" aria-label="Language / Мова" data-i18n-aria="language" style="font:inherit;color:#edf0f5;background:#293444;border:1px solid #455266;border-radius:8px;padding:8px"><option value="en">English</option><option value="uk">Українська</option></select></div></header>
+<main>
+<section class="panel" aria-label="Пульт проєктора" data-i18n-aria="remoteLabel">
+<div class="row"><button data-key="home" data-i18n="home">⌂ Додому</button><button data-key="back" data-i18n="back">← Назад</button></div>
+<div class="pad" aria-label="Навігація" data-i18n-aria="navigation"><button class="up" data-key="up" aria-label="Вгору" data-i18n-aria="up">↑</button><button class="left" data-key="left" aria-label="Ліворуч" data-i18n-aria="left">←</button><button class="ok" data-key="ok">OK</button><button data-key="right" aria-label="Праворуч" data-i18n-aria="right">→</button><button class="down" data-key="down" aria-label="Вниз" data-i18n-aria="down">↓</button></div>
+<button class="wide" data-key="play" data-i18n="play">▶ / Ⅱ Відтворити / пауза</button>
+<div class="audio"><button data-key="vol_down" aria-label="Тихіше" data-i18n="volDown" data-i18n-aria="quieter">Звук −</button><button data-key="mute" data-i18n="mute">Без звуку</button><button data-key="vol_up" aria-label="Гучніше" data-i18n="volUp" data-i18n-aria="louder">Звук +</button></div>
+<p id="status" role="status" aria-live="polite">Підключення до проєктора…</p>
+<p class="hint" data-i18n="keyboardHint">Стрілки + Enter · Esc — назад · Home або H — додому. Один натиск — одна команда.</p>
+<div style="border-top:1px solid #303a48;padding-top:18px;margin-top:20px">
+<p data-i18n="quickLaunch" style="margin:0 0 12px;font-weight:600;color:#edf0f5">Швидкий запуск</p>
+<div style="display:grid;gap:10px"><button data-app="jellyfin">Jellyfin</button><button data-app="smarttube">SmartTube</button><button data-app="kodi">Kodi</button></div>
+</div>
+</section>
+<section class="panel" aria-label="Знімок екрана" data-i18n-aria="snapshotLabel">
+<div class="screenbar"><h2 data-i18n="screenHeading">Екран проєктора</h2><button id="refresh" data-i18n="refresh">Оновити екран</button></div>
+<div class="preview"><p id="placeholder" data-i18n="snapshotPlaceholder">Натисніть «Оновити екран», щоб побачити поточний стан. Кнопки працюють без трансляції відео.</p><img id="screen" alt="Останній знімок екрана проєктора" data-i18n-alt="snapshotAlt"></div>
+<p class="hint" id="captured" data-i18n="snapshotHint">Знімок оновлюється лише за запитом, щоб не навантажувати проєктор.</p>
+<form id="textform" style="margin-top:24px">
+<label for="text" data-i18n="textLabel" style="display:block;margin-bottom:10px;font-weight:600">Текст для проєктора</label>
+<textarea id="text" rows="3" maxlength="2048" placeholder="Введіть текст українською або іншою мовою…" data-i18n-placeholder="textPlaceholder" autocomplete="off" spellcheck="false" style="width:100%;resize:vertical;border:1px solid #455266;border-radius:12px;background:#101318;color:#fff;font:inherit;padding:12px"></textarea>
+<button id="paste" type="submit" data-i18n="paste" style="padding:0 18px;margin-top:10px">Вставити в активне поле</button>
+<p class="hint" data-i18n="textHint">Спочатку виберіть текстове поле на проєкторі. Вставлення також замінює його буфер обміну.</p>
+</form>
+<div style="margin-top:24px"><button id="mouse" class="wide" data-i18n="mouse">Керувати мишею</button>
+<p class="hint" id="mousehint" data-i18n="mouseHint">Курсор рухатиметься на проєкторі. Лівий і правий клік, колесо прокручування. Esc — повернути мишу комп'ютеру.</p></div>
+</section>
+</main>
+<script nonce="__TOKEN__">
+const translations={
+  en:{
+    pageTitle:'Wanbo · Remote',pageSuffix:'/ remote',localTag:'On this computer',language:'Language',remoteLabel:'Projector remote',
+    home:'⌂ Home',back:'← Back',navigation:'Navigation',up:'Up',left:'Left',right:'Right',down:'Down',play:'▶ / Ⅱ Play / pause',
+    volDown:'Volume −',mute:'Mute',volUp:'Volume +',quieter:'Volume down',louder:'Volume up',
+    keyboardHint:'Arrows + Enter · Esc — back · Home or H — home. One press sends one command.',quickLaunch:'Quick launch',
+    snapshotLabel:'Screenshot',screenHeading:'Projector screen',refresh:'Refresh screen',
+    snapshotPlaceholder:'Choose “Refresh screen” to see the current screen. Controls work without video streaming.',
+    snapshotAlt:'Latest projector screenshot',snapshotHint:'Screenshots update only on request to reduce projector load.',
+    textLabel:'Text for the projector',textPlaceholder:'Type in English, Ukrainian or another language…',paste:'Paste into active field',
+    textHint:'Select a text field on the projector first. Pasting also replaces its clipboard contents.',
+    mouse:'Control mouse',mouseHint:'Watch the cursor on the projector. Left/right click and scroll wheel. Esc returns the mouse to your computer.',
+    connecting:'Connecting to projector…',connected:'Projector connected. Ready to control.',stale:'Refresh this page: the remote service has restarted.',
+    busy:'The previous command is still running. Try again.',connectionError:'Cannot reach the projector. Check that it is on, then try again.',
+    sending:'Sending…',sent:'Command sent.',opening:'Opening {app}…',launched:'Launch request for {app} sent.',refreshing:'Refreshing…',
+    snapshotAt:'Screenshot: {time} · Updates on request.',textTooLong:'Text is too long. Send it in two parts.',pasting:'Pasting text…',
+    textSent:'Text sent to the active field.',mouseError:'Could not capture the mouse. Click again and allow capture if your browser asks.',
+    mouseActive:'Mouse controls the projector · Esc to exit',clickBusy:'Wait for the pending clicks to finish.'
+  },
+  uk:{
+    pageTitle:'Wanbo · Пульт',pageSuffix:'/ пульт',localTag:"На цьому комп'ютері",language:'Мова',remoteLabel:'Пульт проєктора',
+    home:'⌂ Додому',back:'← Назад',navigation:'Навігація',up:'Вгору',left:'Ліворуч',right:'Праворуч',down:'Вниз',play:'▶ / Ⅱ Відтворити / пауза',
+    volDown:'Звук −',mute:'Без звуку',volUp:'Звук +',quieter:'Тихіше',louder:'Гучніше',
+    keyboardHint:'Стрілки + Enter · Esc — назад · Home або H — додому. Один натиск — одна команда.',quickLaunch:'Швидкий запуск',
+    snapshotLabel:'Знімок екрана',screenHeading:'Екран проєктора',refresh:'Оновити екран',
+    snapshotPlaceholder:'Натисніть «Оновити екран», щоб побачити поточний стан. Кнопки працюють без трансляції відео.',
+    snapshotAlt:'Останній знімок екрана проєктора',snapshotHint:'Знімок оновлюється лише за запитом, щоб не навантажувати проєктор.',
+    textLabel:'Текст для проєктора',textPlaceholder:'Введіть текст українською, англійською або іншою мовою…',paste:'Вставити в активне поле',
+    textHint:'Спочатку виберіть текстове поле на проєкторі. Вставлення також замінює його буфер обміну.',
+    mouse:'Керувати мишею',mouseHint:"Дивіться на курсор проєктора. Лівий і правий клік, колесо прокручування. Esc — повернути мишу комп'ютеру.",
+    connecting:'Підключення до проєктора…',connected:'Проєктор підключено. Можна керувати.',stale:'Оновіть цю сторінку: пульт був перезапущений.',
+    busy:'Попередня команда ще виконується. Спробуйте знову.',connectionError:'Немає зв’язку з проєктором. Перевірте, чи він увімкнений, і повторіть.',
+    sending:'Надсилання…',sent:'Команду надіслано.',opening:'Відкриваю {app}…',launched:'Запуск {app} надіслано.',refreshing:'Оновлення…',
+    snapshotAt:'Знімок: {time} · Оновлюється за запитом.',textTooLong:'Текст задовгий. Надішліть його двома частинами.',pasting:'Вставлення тексту…',
+    textSent:'Текст надіслано в активне поле.',mouseError:'Не вдалося захопити мишу. Натисніть ще раз і дозвольте доступ, якщо браузер запитує.',
+    mouseActive:'Миша керує проєктором · Esc — вийти',clickBusy:'Зачекайте завершення кліків.'
+  }
+};
+const token='__TOKEN__',status=document.querySelector('#status'),buttons=[...document.querySelectorAll('[data-key]')];
+let busy=false,imageUrl=null,capturedAt=null,lastStatus='connecting',lastStatusValues={};
+let language=navigator.language.startsWith('uk')?'uk':'en';
+try{const saved=localStorage.getItem('wanbo-language');if(saved==='uk'||saved==='en')language=saved;}catch{}
+function t(key,values={}){let text=translations[language][key];for(const [name,value] of Object.entries(values))text=text.replaceAll('{'+name+'}',value);return text;}
+function setStatus(key,values={}){lastStatus=key;lastStatusValues=values;status.textContent=t(key,values);}
+function showError(error){setStatus(error.translationKey||'connectionError');}
+function renderCaptured(){if(capturedAt)document.querySelector('#captured').textContent=t('snapshotAt',{time:capturedAt.toLocaleTimeString(language==='uk'?'uk-UA':'en-GB')});}
+function renderLanguage(){
+  document.documentElement.lang=language;document.title=t('pageTitle');document.querySelector('#language').value=language;
+  document.querySelectorAll('[data-i18n]').forEach(node=>node.textContent=t(node.dataset.i18n));
+  for(const [attribute,property] of [['data-i18n-aria','aria-label'],['data-i18n-placeholder','placeholder'],['data-i18n-alt','alt']]){
+    document.querySelectorAll('['+attribute+']').forEach(node=>node.setAttribute(property,t(node.getAttribute(attribute))));
+  }
+  if(document.pointerLockElement)document.querySelector('#mouse').textContent=t('mouseActive');
+  setStatus(lastStatus,lastStatusValues);renderCaptured();
+}
+document.querySelector('#language').addEventListener('change',()=>{
+  language=document.querySelector('#language').value==='uk'?'uk':'en';
+  try{localStorage.setItem('wanbo-language',language);}catch{}
+  renderLanguage();
+});
+renderLanguage();
+async function request(path,body={}){
+  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Wanbo-Token':token},body:JSON.stringify(body),signal:AbortSignal.timeout(36000)});
+  if(!response.ok){const key=response.status===403?'stale':response.status===409?'busy':'connectionError';const error=Error(t(key));error.translationKey=key;throw error;}
+  return response;
+}
+async function command(key){
+  if(busy)return;
+  busy=true;buttons.forEach(b=>b.disabled=true);setStatus('sending');
+  try{await request('/api/key',{key});setStatus('sent');}
+  catch(error){showError(error);}
+  finally{busy=false;buttons.forEach(b=>b.disabled=false);}
+}
+buttons.forEach(button=>button.addEventListener('click',event=>{if(event.detail)button.blur();command(button.dataset.key);}));
+document.querySelectorAll('[data-app]').forEach(button=>button.addEventListener('click',async event=>{
+  if(event.detail)button.blur();if(busy)return;busy=true;button.disabled=true;setStatus('opening',{app:button.textContent});
+  try{await request('/api/app',{app:button.dataset.app});setStatus('launched',{app:button.textContent});}
+  catch(error){showError(error);}
+  finally{busy=false;button.disabled=false;}
+}));
+document.addEventListener('keydown',event=>{
+  const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Enter:'ok',Escape:'back',Backspace:'back',Home:'home',KeyH:'home'};
+  if(event.altKey||event.ctrlKey||event.metaKey)return;
+  if(document.pointerLockElement||event.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+  if(event.code==='Enter'&&event.target.closest('button'))return;
+  const key=keys[event.code];if(!key)return;
+  event.preventDefault();if(!event.repeat)command(key);
+});
+document.querySelector('#refresh').addEventListener('click',async event=>{
+  const button=event.currentTarget;button.disabled=true;button.textContent=t('refreshing');
+  try{
+    const response=await request('/api/screenshot'),blob=await response.blob();
+    if(imageUrl)URL.revokeObjectURL(imageUrl);imageUrl=URL.createObjectURL(blob);
+    const screen=document.querySelector('#screen');screen.src=imageUrl;screen.style.display='block';
+    document.querySelector('#placeholder').style.display='none';
+    capturedAt=new Date();renderCaptured();
+  }catch(error){showError(error);}
+  finally{button.disabled=false;button.textContent=t('refresh');}
+});
+request('/api/connect').then(()=>setStatus('connected')).catch(showError);
+document.querySelector('#textform').addEventListener('submit',async event=>{
+  event.preventDefault();const text=document.querySelector('#text').value,button=document.querySelector('#paste');
+  if(!text)return;
+  if(new TextEncoder().encode(text).length>4096){setStatus('textTooLong');return;}
+  if(busy)return;busy=true;button.disabled=true;setStatus('pasting');
+  try{await request('/api/text',{text});setStatus('textSent');}
+  catch(error){showError(error);}
+  finally{busy=false;button.disabled=false;}
+});
+const mouseButton=document.querySelector('#mouse');
+let mouseBusy=false,mouseQueue=[],mouseX=0,mouseY=0,mouseWheel=0;
+const clamp=(value,limit)=>Math.max(-limit,Math.min(limit,value));
+mouseButton.addEventListener('click',async()=>{
+  if(document.pointerLockElement)return;
+  try{await request('/api/mouse',{kind:'enable'});await mouseButton.requestPointerLock();}
+  catch(error){setStatus(error.translationKey||'mouseError');}
+});
+document.addEventListener('pointerlockchange',()=>{
+  const active=document.pointerLockElement===mouseButton;
+  mouseButton.textContent=t(active?'mouseActive':'mouse');
+  if(!active){mouseQueue=[];mouseX=mouseY=mouseWheel=0;}
+});
+document.addEventListener('mousemove',event=>{
+  if(document.pointerLockElement!==mouseButton)return;
+  mouseX=clamp(mouseX+event.movementX,2048);mouseY=clamp(mouseY+event.movementY,2048);
+});
+document.addEventListener('mousedown',event=>{
+  if(document.pointerLockElement!==mouseButton||![0,2].includes(event.button))return;
+  event.preventDefault();
+  if(mouseQueue.length>=8){setStatus('clickBusy');return;}
+  mouseQueue.push({kind:'click',button:event.button===0?'left':'right',dx:mouseX,dy:mouseY,wheel:mouseWheel});
+  mouseX=mouseY=mouseWheel=0;
+});
+document.addEventListener('contextmenu',event=>{if(document.pointerLockElement===mouseButton)event.preventDefault();});
+document.addEventListener('wheel',event=>{
+  if(document.pointerLockElement!==mouseButton)return;
+  event.preventDefault();mouseWheel=clamp(mouseWheel-Math.sign(event.deltaY),10);
+},{passive:false});
+setInterval(async()=>{
+  if(document.pointerLockElement!==mouseButton||mouseBusy||busy)return;
+  let action=mouseQueue.shift();
+  if(!action){if(!mouseX&&!mouseY&&!mouseWheel)return;action={kind:'move',dx:mouseX,dy:mouseY,wheel:mouseWheel};mouseX=mouseY=mouseWheel=0;}
+  mouseBusy=true;
+  try{await request('/api/mouse',action);}
+  catch(error){showError(error);mouseQueue=[];mouseX=mouseY=mouseWheel=0;document.exitPointerLock();}
+  finally{mouseBusy=false;}
+},50);
+</script>
+</html>

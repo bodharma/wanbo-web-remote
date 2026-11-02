@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 __pycache__/
+.ruff_cache/
 *.py[cod]
 *.log
 .DS_Store

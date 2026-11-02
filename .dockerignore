@@ -2,6 +2,7 @@
 .env
 .env.*
 __pycache__
+.ruff_cache
 **/__pycache__
 *.log
 .DS_Store

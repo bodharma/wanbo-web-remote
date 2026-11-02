@@ -6,6 +6,8 @@ A local browser remote for an Android projector over Wi-Fi and ADB: navigation, 
 
 The interface supports **English / Українська**. It initially follows the browser language and remembers your choice locally. Switching languages preserves any text you entered.
 
+For apps to install, a lighter home screen, animation settings, and Jellyfin / Kodi playback fixes, see the [projector setup and performance guide](docs/PROJECTOR_SETUP.md).
+
 ## Requirements
 
 Docker with Compose v2 and network access from the container to the projector. On macOS, start OrbStack or Docker Desktop. The projector must already expose ADB over TCP, usually port `5555`; Developer options alone do not guarantee this. Mouse support requires ADB shell access to `/dev/uhid`.

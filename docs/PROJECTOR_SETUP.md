@@ -14,7 +14,9 @@ Install only what you use. Follow the linked project's current compatibility and
 | [Lite TV Launcher](https://github.com/anujmv/lite-tv-launcher/releases) | A lightweight Home replacement; version 1.0 was tested. Package: `dev.lite.launcher`. Install and test before changing the stock launcher. |
 | [SmartTube F-Droid](https://f-droid.org/en/packages/app.smarttube.fdroid/) | YouTube client for TV navigation. Package: `app.smarttube.fdroid`, matching the remote's shortcut. Use the F-Droid build channel; other SmartTube variants have different package IDs and signatures. Read the [upstream security announcement](https://github.com/yuliskov/SmartTube#important-announcement-about-the-app): the developer reported a compromised build environment and potentially affected builds/keys. A working player alone does not establish that a build is safe. |
 | [Jellyfin for Android TV](https://github.com/jellyfin/jellyfin-androidtv/releases) | Browse your own Jellyfin server; version 0.19.10 was tested. Package: `org.jellyfin.androidtv`. Enter your server's LAN address and use its normal sign-in or Quick Connect. |
-| [Kodi](https://kodi.tv/download/android/) | An external Jellyfin player and a software-decoding fallback. Choose **ARMV7A (32BIT)** for this unit; version 20.2 was tested. Package: `org.xbmc.kodi`. This does not mean every newer release has been tested on this firmware. |
+| [Kodi](https://kodi.tv/download/android/) | An external Jellyfin player and a software-decoding fallback. Choose **ARMV7A (32BIT)** for this unit; versions 20.2 and 21.3 were tested. Package: `org.xbmc.kodi`. |
+| [JellyCon](https://jellyfin.org/docs/general/clients/kodi/) | Browse Jellyfin directly inside Kodi. Version 1.0.2+py3 was tested; install it through the official Jellyfin Kodi repository. It is a Kodi add-on, not a separate Android APK. |
+| [LocalSend](https://github.com/localsend/localsend/releases/tag/v1.18.2) | Transfer files over the LAN. Version 1.18.2 was tested on Android 9 with the **android-arm32v7** APK and on an Apple Silicon Mac with the official DMG. |
 
 Keep the package IDs above if you want the existing Jellyfin / SmartTube / Kodi shortcuts to work. A different variant requires changing the `APPS` allowlist in `web_remote.py` and building from source.
 
@@ -103,6 +105,26 @@ First try ordinary playback with hardware decoding. On the tested unit the vendo
 Software decoding increases CPU load. If hardware playback works on your unit, keep it enabled. To revert the fallback, enable both Kodi acceleration settings and disable Jellyfin's external-player setting.
 
 Jellyfin Android TV 0.19.10 also crashed when a web client's **Play on** command tried to open the external player (`FLAG_ACTIVITY_NEW_TASK` missing). Local Play worked. The remote's navigation buttons operate the projector UI and avoid that specific remote-launch path; they do not patch Jellyfin. Newer client versions may behave differently. Lowering a bitrate limit does not force transcoding when the file is already below that limit.
+
+## JellyCon: Jellyfin inside Kodi
+
+JellyCon offers a second browsing path that opens videos inside Kodi without Android's external-player chooser. It uses your server's libraries without importing the entire library into Kodi's database.
+
+1. Install the [official Jellyfin Kodi repository](https://jellyfin.org/docs/general/clients/kodi/), then choose **Install from repository → Jellyfin Kodi Add-ons → Video add-ons → JellyCon**. Use the Python 3 repository for Kodi 19 and later.
+2. Open JellyCon, select or enter your server's LAN address, and sign in. Quick Connect is supported: authorize its displayed code from an already signed-in Jellyfin client. Each projector needs its own connection; credentials are not bundled with this remote.
+3. Add JellyCon to Kodi's **Favourites** for convenient access. Browse the desired episode inside JellyCon and keep the software-decoding fallback above if your vendor decoder fails.
+
+The repository ZIP tested here still referenced an obsolete `repo.jellyfin.org` feed and returned HTTP 404. If that happens, check `repository.jellyfin.kodi/addon.xml` in the ZIP and update only its three feed URL fields before installation: `info` to `https://kodi.jellyfin.org/py3/addons.xml`, `checksum` to `https://kodi.jellyfin.org/py3/addons.xml.md5`, and `datadir` to `https://kodi.jellyfin.org/py3`. Preserve the add-on's directory structure and other contents. These are the current official Python 3 feed URLs, not a repository hosted by this project.
+
+Kodi 20.2 also produced a native `SIGILL` crash in `_armv7_tick` in `libkodi.so`. After updating to official 21.3 with settings preserved, short JellyCon playback and an application restart passed without reproducing that crash. Long playback and a full projector reboot were not tested.
+
+## LocalSend: files from a laptop
+
+1. Install the official LocalSend app on both devices. For this projector use the **android-arm32v7** APK; version 1.18.2 requires Android 7 or later. Connect both devices to the same LAN and open LocalSend on the projector.
+2. On the laptop, choose **Send → File**, select your file, and choose the projector's displayed LocalSend name. The generated name can differ from its Android model name.
+3. On the projector, choose **Accept**. Allow file access when Android requests it; received files go to **Download** by default. Leave Quick Save off to confirm future transfers. Use the browser remote's pointer if a control is awkward with the D-pad.
+
+Mac discovery and a Mac-to-projector transfer of a small UTF-8 text file through the encrypted LocalSend protocol were checked; the received SHA-256 matched. Large files, transfer speed and the reverse direction were not tested. Neither app is included in the remote's Docker image, and LocalSend has no dedicated quick-launch button in the remote.
 
 ## Kodi repeats an old episode
 

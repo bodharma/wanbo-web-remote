@@ -21,6 +21,9 @@ spec.loader.exec_module(web)
 
 
 class PacketTest(unittest.TestCase):
+    def test_keystone_launches_stock_calibration(self):
+        self.assertEqual(web.app_packet("keystone"), b"\x10\x18com.toptech.zoomsettings")
+
     def test_app_launch_is_whitelisted(self):
         packet = web.app_packet("jellyfin")
         self.assertEqual(packet[0], 16)

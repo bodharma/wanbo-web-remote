@@ -16,7 +16,8 @@
 <p class="hint" data-i18n="keyboardHint">Стрілки + Enter · Esc — назад · Home або H — додому. Один натиск — одна команда.</p>
 <div style="border-top:1px solid #303a48;padding-top:18px;margin-top:20px">
 <p data-i18n="quickLaunch" style="margin:0 0 12px;font-weight:600;color:#edf0f5">Швидкий запуск</p>
-<div style="display:grid;gap:10px"><button data-app="jellyfin">Jellyfin</button><button data-app="smarttube">SmartTube</button><button data-app="kodi">Kodi</button></div>
+<div style="display:grid;gap:10px"><button data-app="jellyfin">Jellyfin</button><button data-app="smarttube">SmartTube</button><button data-app="kodi">Kodi</button><button data-app="keystone" data-i18n="keystone">Калібрування / Keystone</button></div>
+<p class="hint" data-i18n="keystoneHint">Відкриває штатне меню проєктора. Виберіть Trapezoid Four і керуйте стрілками та OK.</p>
 <p class="hint" data-i18n="kodiHint">Якщо Kodi повторює стару серію, зупиніть відтворення й перевірте стан. Відновлення закриє Kodi та відкриє його головний екран зі збереженням налаштувань.</p>
 <div style="display:grid;gap:10px;margin-top:12px"><button id="kodi-check" data-i18n="kodiCheck">Перевірити Kodi</button><button id="kodi-repair" data-i18n="kodiRepair">Відновити Kodi</button></div>
 </div>
@@ -42,6 +43,7 @@ const translations={
     home:'⌂ Home',back:'← Back',navigation:'Navigation',up:'Up',left:'Left',right:'Right',down:'Down',play:'▶ / Ⅱ Play / pause',
     volDown:'Volume −',mute:'Mute',volUp:'Volume +',quieter:'Volume down',louder:'Volume up',
     keyboardHint:'Arrows + Enter · Esc — back · Home or H — home. One press sends one command.',quickLaunch:'Quick launch',
+    keystone:'Calibration / Keystone',keystoneHint:'Opens the projector’s stock menu. Choose Trapezoid Four, then use arrows and OK.',
     snapshotLabel:'Screenshot',screenHeading:'Projector screen',refresh:'Refresh screen',
     snapshotPlaceholder:'Choose “Refresh screen” to see the current screen. Controls work without video streaming.',
     snapshotAlt:'Latest projector screenshot',snapshotHint:'Screenshots update only on request to reduce projector load.',
@@ -68,6 +70,7 @@ const translations={
     home:'⌂ Додому',back:'← Назад',navigation:'Навігація',up:'Вгору',left:'Ліворуч',right:'Праворуч',down:'Вниз',play:'▶ / Ⅱ Відтворити / пауза',
     volDown:'Звук −',mute:'Без звуку',volUp:'Звук +',quieter:'Тихіше',louder:'Гучніше',
     keyboardHint:'Стрілки + Enter · Esc — назад · Home або H — додому. Один натиск — одна команда.',quickLaunch:'Швидкий запуск',
+    keystone:'Калібрування / Keystone',keystoneHint:'Відкриває штатне меню проєктора. Виберіть Trapezoid Four і керуйте стрілками та OK.',
     snapshotLabel:'Знімок екрана',screenHeading:'Екран проєктора',refresh:'Оновити екран',
     snapshotPlaceholder:'Натисніть «Оновити екран», щоб побачити поточний стан. Кнопки працюють без трансляції відео.',
     snapshotAlt:'Останній знімок екрана проєктора',snapshotHint:'Знімок оновлюється лише за запитом, щоб не навантажувати проєктор.',

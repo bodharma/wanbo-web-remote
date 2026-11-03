@@ -55,10 +55,10 @@ Your `.env` contains local configuration and is excluded from Git and the Docker
 
 ## Prebuilt GHCR image
 
-Image: `ghcr.io/bodharma/wanbo-web-remote:0.1.1`. The source and image are public. No GitHub account, token or registry login is required:
+Image: `ghcr.io/bodharma/wanbo-web-remote:0.1.2`. The source and image are public. No GitHub account, token or registry login is required:
 
 ```sh
-docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.1
+docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.2
 ```
 
 Published image platforms: `linux/arm64` and `linux/amd64`. To build from source instead, replace `docker compose pull` in setup with `docker compose build`. Both paths use the same `.env` configuration and startup command.
@@ -72,12 +72,15 @@ Published image platforms: `linux/arm64` and `linux/amd64`. To build from source
 | Text | Select a field on the projector, type in the browser, then choose Paste |
 | Mouse | Control mouse, then move, click and scroll; Esc releases capture |
 | Screenshot | Refresh screen; the image does not update automatically |
+| Calibration | Calibration / Keystone → Trapezoid Four; navigate with arrows and OK |
 
 Pasting replaces the projector clipboard; the computer clipboard is not read. A protocol acknowledgement does not guarantee that an app accepted the paste. Text is not written to logs or localStorage. The limit is 4096 UTF-8 bytes.
 
 The mouse is a relative virtual HID device: watch its cursor on the projector. Clicking the screenshot does not send a click. Left/right click and vertical scrolling are supported; dragging is not implemented. Mouse capture requires browser Pointer Lock support.
 
 Quick launch expects installed packages `org.jellyfin.androidtv`, `app.smarttube.fdroid`, and `org.xbmc.kodi`. The allowlist is `APPS` in `web_remote.py`. Launching does not force-stop an app or automatically play a video.
+
+**Calibration / Keystone** opens the installed stock `com.toptech.zoomsettings` menu. On the tested T2M+ firmware, choose **Trapezoid Four** to adjust individual corners. The shortcut does not reset or change calibration values; adjustments happen in the stock menu. Other firmware may not include this package.
 
 **Check Kodi** inspects its startup task and playback state. If it repeats an old episode, pause or stop playback and choose **Restore Kodi**. This explicitly recreates a media-bound or missing task as Kodi's home screen, preserving settings and accounts. An already clean task is left alone. Playing, buffering or unrecognized states block the repair. It never runs automatically on connection; see the [recovery guide](docs/PROJECTOR_SETUP.md#kodi-repeats-an-old-episode).
 
@@ -89,7 +92,7 @@ Quick launch expects installed packages `org.jellyfin.androidtv`, `app.smarttube
 | `PROJECTOR_PORT` | ADB TCP port; default `5555` |
 | `PROJECTOR_SERIAL` | Required exact result of `getprop ro.serialno` |
 | `WEB_PORT` | Local browser port; default `8765` |
-| `IMAGE` | Compose image; default `ghcr.io/bodharma/wanbo-web-remote:0.1.1` |
+| `IMAGE` | Compose image; default `ghcr.io/bodharma/wanbo-web-remote:0.1.2` |
 
 Compose sets `WEB_ORIGIN` to match the published port. For custom `docker run` commands, set `WEB_ORIGIN` explicitly if you change that port. Inside the container HTTP listens on `0.0.0.0:8765`; Compose publishes only on the host's `127.0.0.1`.
 

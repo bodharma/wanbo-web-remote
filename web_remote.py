@@ -17,7 +17,8 @@ import remote
 PORT = remote.PORT
 KEYS = {"up": 19, "down": 20, "left": 21, "right": 22, "ok": 23,
         "home": 3, "back": 4, "play": 85, "vol_up": 24, "vol_down": 25, "mute": 164}
-APPS = {"jellyfin": "org.jellyfin.androidtv", "smarttube": "app.smarttube.fdroid", "kodi": "org.xbmc.kodi"}
+APPS = {"jellyfin": "org.jellyfin.androidtv", "smarttube": "app.smarttube.fdroid", "kodi": "org.xbmc.kodi",
+        "keystone": "com.toptech.zoomsettings"}
 SERVER = "/data/local/tmp/wanbo-web-scrcpy-server.jar"
 SERVER_SHA = "764eb6f79811d5211fe9df341120882ba9994c7a61b897d7bf3fb662e53bc536"
 # USB HID mouse descriptor used by scrcpy 5.0.1 (upstream LICENSE is bundled).

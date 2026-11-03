@@ -53,10 +53,10 @@ Docker із Compose v2 та доступ контейнера до мережі 
 
 ## Готовий образ у GHCR
 
-Образ: `ghcr.io/bodharma/wanbo-web-remote:0.1.0`. Код та образ публічні. Акаунт GitHub, токен і вхід у registry не потрібні:
+Образ: `ghcr.io/bodharma/wanbo-web-remote:0.1.1`. Код та образ публічні. Акаунт GitHub, токен і вхід у registry не потрібні:
 
 ```sh
-docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.0
+docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.1
 ```
 
 Доступні платформи опублікованого образу: `linux/arm64` та `linux/amd64`. Для збірки з коду замініть `docker compose pull` у setup на `docker compose build`. Обидва варіанти використовують той самий `.env` і команду запуску.
@@ -77,6 +77,8 @@ docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.0
 
 Швидкі кнопки очікують уже встановлені пакети `org.jellyfin.androidtv`, `app.smarttube.fdroid`, `org.xbmc.kodi`. Список дозволених пакетів — `APPS` у `web_remote.py`. Натискання відкриває застосунок без примусового закриття або автоматичного запуску відео.
 
+**«Перевірити Kodi»** зчитує стартове завдання та стан відтворення. Якщо Kodi повторює стару серію, призупиніть або зупиніть відео й натисніть **«Відновити Kodi»**. Ця явна дія замінює завдання з посиланням на відео або створює відсутнє, відкриваючи головний екран Kodi зі збереженням налаштувань і акаунтів. Уже чисте завдання залишається без змін. Відтворення, буферизація чи нерозпізнаний стан блокують відновлення. Під час підключення воно автоматично не запускається; дивіться [гайд відновлення](docs/PROJECTOR_SETUP.uk.md#kodi-повторює-стару-серію).
+
 ## Налаштування
 
 | Змінна | Значення |
@@ -85,7 +87,7 @@ docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.0
 | `PROJECTOR_PORT` | TCP-порт ADB, типово `5555` |
 | `PROJECTOR_SERIAL` | Обов'язковий точний результат `getprop ro.serialno` |
 | `WEB_PORT` | Локальний порт браузера, типово `8765` |
-| `IMAGE` | Образ для Compose, типово `ghcr.io/bodharma/wanbo-web-remote:0.1.0` |
+| `IMAGE` | Образ для Compose, типово `ghcr.io/bodharma/wanbo-web-remote:0.1.1` |
 
 Compose автоматично узгоджує `WEB_ORIGIN` із зовнішнім портом. Для власного `docker run` задайте `WEB_ORIGIN` явно, якщо змінюєте порт публікації. Усередині контейнера HTTP слухає `0.0.0.0:8765`; Compose публікує його лише на `127.0.0.1` хоста.
 

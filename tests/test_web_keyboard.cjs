@@ -6,6 +6,7 @@ const path = require('node:path');
 const html = fs.readFileSync(path.join(__dirname, '..', 'web_remote.html'), 'utf8');
 const script = html.match(/<script nonce="__TOKEN__">([\s\S]*?)<\/script>/)[1];
 const callbacks = new Map(), nodes = new Map(), requests = [];
+let kodiResult={state:'media',repaired:false};
 function node(id) {
   if (!nodes.has(id)) nodes.set(id, {
     style: {}, dataset: {}, disabled: false,
@@ -38,7 +39,7 @@ const context=vm.createContext({
   localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
   fetch: async (url, options) => {
     requests.push([url, JSON.parse(options.body)]);
-    return { ok: true, blob: async () => ({}) };
+    return { ok: true, blob: async () => ({}), json: async () => kodiResult };
   },
   AbortSignal: { timeout: () => undefined },
   URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} },
@@ -109,5 +110,20 @@ function key(code, target) {
   requests.length=0;
   await callbacks.get('button:app:click')({detail:0});
   assert.deepEqual(requests,[['/api/app',{app:'jellyfin'}]]);
+  requests.length=0;
+  assert.equal(typeof callbacks.get('#kodi-check:click'),'function','Kodi state check must be available');
+  await callbacks.get('#kodi-check:click')();
+  assert.deepEqual(requests,[['/api/kodi',{action:'check'}]]);
+  assert.match(node('#status').textContent,/video link/i);
+  kodiResult={state:'ready',repaired:true};requests.length=0;
+  await callbacks.get('#kodi-repair:click')();
+  assert.deepEqual(requests,[['/api/kodi',{action:'repair'}]]);
+  assert.match(node('#status').textContent,/restored/i);
+  kodiResult={state:'playing',repaired:false};
+  await callbacks.get('#kodi-repair:click')();
+  assert.match(node('#status').textContent,/stop playback/i);
+  assert.equal(node('#kodi-repair').disabled,false);
+  node('#language').value='uk';callbacks.get('#language:change')();
+  assert.match(node('#status').textContent,/Зупиніть відтворення/);
   console.log('Browser checks passed: keyboard, Unicode form, mouse ordering and Esc.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

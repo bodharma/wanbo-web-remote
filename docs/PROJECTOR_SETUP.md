@@ -104,6 +104,16 @@ Software decoding increases CPU load. If hardware playback works on your unit, k
 
 Jellyfin Android TV 0.19.10 also crashed when a web client's **Play on** command tried to open the external player (`FLAG_ACTIVITY_NEW_TASK` missing). Local Play worked. The remote's navigation buttons operate the projector UI and avoid that specific remote-launch path; they do not patch Jellyfin. Newer client versions may behave differently. Lowering a bitrate limit does not force transcoding when the file is already below that limit.
 
+## Kodi repeats an old episode
+
+Kodi 20.2 can restore an Android task containing an older video's URL after its process stops. On the tested unit a new episode's URL was opened, then replaced by the old URL during startup. This is separate from Jellyfin's remote-launch crash described above.
+
+1. In the browser remote, choose **Check Kodi**. A task containing a video link indicates a possible source of this behavior, not proof that every such task is broken.
+2. Pause or stop playback, then choose **Restore Kodi**. The backend checks playback again, force-stops only Kodi and launches its home screen with a fresh task when repair is needed. Settings, accounts and media files are preserved. A paused video's in-memory playback session is closed.
+3. Return to Jellyfin and select the episode again. A second repair of an already clean task makes no changes.
+
+Recovery refuses active playback, buffering, missing Kodi installations and unrecognized Android diagnostic formats. Check and repair are explicit actions; page loading, connecting and ordinary quick launch never reset Kodi. Task and media-session parsing was tested on this Android 9 firmware. This is a recovery action, not a Kodi code patch or a guarantee against recurrence after reboot/task removal. Before/after playback tests used different URLs for the same permitted episode, including process recreation; a full projector reboot was not tested.
+
 ## Google Play sign-in loops
 
 Check installed packages rather than assuming a Google component is absent because the launcher hides it:

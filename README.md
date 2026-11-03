@@ -53,10 +53,10 @@ Your `.env` contains local configuration and is excluded from Git and the Docker
 
 ## Prebuilt GHCR image
 
-Image: `ghcr.io/bodharma/wanbo-web-remote:0.1.0`. The source and image are public. No GitHub account, token or registry login is required:
+Image: `ghcr.io/bodharma/wanbo-web-remote:0.1.1`. The source and image are public. No GitHub account, token or registry login is required:
 
 ```sh
-docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.0
+docker pull ghcr.io/bodharma/wanbo-web-remote:0.1.1
 ```
 
 Published image platforms: `linux/arm64` and `linux/amd64`. To build from source instead, replace `docker compose pull` in setup with `docker compose build`. Both paths use the same `.env` configuration and startup command.
@@ -77,6 +77,8 @@ The mouse is a relative virtual HID device: watch its cursor on the projector. C
 
 Quick launch expects installed packages `org.jellyfin.androidtv`, `app.smarttube.fdroid`, and `org.xbmc.kodi`. The allowlist is `APPS` in `web_remote.py`. Launching does not force-stop an app or automatically play a video.
 
+**Check Kodi** inspects its startup task and playback state. If it repeats an old episode, pause or stop playback and choose **Restore Kodi**. This explicitly recreates a media-bound or missing task as Kodi's home screen, preserving settings and accounts. An already clean task is left alone. Playing, buffering or unrecognized states block the repair. It never runs automatically on connection; see the [recovery guide](docs/PROJECTOR_SETUP.md#kodi-repeats-an-old-episode).
+
 ## Configuration
 
 | Variable | Meaning |
@@ -85,7 +87,7 @@ Quick launch expects installed packages `org.jellyfin.androidtv`, `app.smarttube
 | `PROJECTOR_PORT` | ADB TCP port; default `5555` |
 | `PROJECTOR_SERIAL` | Required exact result of `getprop ro.serialno` |
 | `WEB_PORT` | Local browser port; default `8765` |
-| `IMAGE` | Compose image; default `ghcr.io/bodharma/wanbo-web-remote:0.1.0` |
+| `IMAGE` | Compose image; default `ghcr.io/bodharma/wanbo-web-remote:0.1.1` |
 
 Compose sets `WEB_ORIGIN` to match the published port. For custom `docker run` commands, set `WEB_ORIGIN` explicitly if you change that port. Inside the container HTTP listens on `0.0.0.0:8765`; Compose publishes only on the host's `127.0.0.1`.
 

@@ -1,6 +1,6 @@
 services:
   remote:
-    image: ${IMAGE:-ghcr.io/bodharma/wanbo-web-remote:0.1.0}
+    image: ${IMAGE:-ghcr.io/bodharma/wanbo-web-remote:0.1.1}
     build: .
     init: true
     restart: unless-stopped

@@ -54,6 +54,45 @@ def app_packet(name):
     return bytes((16, len(package))) + package
 
 
+def kodi_state(activities, sessions):
+    # shortcut: Android 9 dumpsys format, extend only with fixtures from new devices.
+    if "ACTIVITY MANAGER ACTIVITIES" not in activities or "MEDIA SESSION SERVICE" not in sessions:
+        return "unknown"
+    counts = re.findall(r"Sessions Stack - have (\d+) sessions:", sessions)
+    records = re.split(r"(?m)^\s*ownerPid=\d+[^\n]*\n", sessions)[1:]
+    if not counts or len(records) != sum(map(int, counts)):
+        return "unknown"
+    states = []
+    for record in records:
+        packages = re.findall(r"(?m)^\s*package=(\S+)\s*$", record)
+        playback = re.findall(r"(?m)^\s*state=([^\n]+)", record)
+        if (len(packages) != 1 or len(playback) != 1
+                or not re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", packages[0], re.ASCII)):
+            return "unknown"
+        if packages[0] == "org.xbmc.kodi":
+            active = re.findall(r"(?m)^\s*active=(true|false)\s*$", record)
+            if len(active) != 1:
+                return "unknown"
+            if playback[0].strip() == "null" and active[0] == "false":
+                states.append(0)
+                continue
+            match = re.fullmatch(r"PlaybackState \{state=(\d+),.*\}", playback[0].strip())
+            if not match:
+                return "unknown"
+            states.append(int(match[1]))
+    if any(state not in (0, 1, 2, 7) for state in states):
+        return "playing"
+    roots = [line.strip() for line in activities.splitlines() if line.strip().startswith("intent={")]
+    if not roots or any(not line.endswith("}") for line in roots):
+        return "unknown"
+    intents = [line for line in roots if "cmp=org.xbmc.kodi/" in line]
+    if not intents:
+        return "unknown" if "org.xbmc.kodi" in activities else "missing"
+    if any(re.search(r"\bdat=", line) for line in intents):
+        return "media"
+    return "ready" if all("act=android.intent.action.MAIN " in line for line in intents) else "unknown"
+
+
 def mouse_packet(dx, dy, wheel, button=None):
     if any(type(v) is not int or abs(v) > limit for v, limit in ((dx, 2048), (dy, 2048), (wheel, 10))):
         raise ValueError("Invalid mouse motion")
@@ -216,6 +255,30 @@ class Device:
             await self._ensure()
             await self._write(packet)
 
+    async def _kodi_state(self):
+        installed = await remote.adb("-s", self.serial, "shell", "-n", "pm path org.xbmc.kodi || true")
+        if not any(line.startswith("package:") for line in installed.splitlines()):
+            return "not_installed"
+        activities = await remote.adb("-s", self.serial, "shell", "-n", "dumpsys activity activities")
+        sessions = await remote.adb("-s", self.serial, "shell", "-n", "dumpsys media_session")
+        return kodi_state(activities, sessions)
+
+    async def kodi(self, repair=False):
+        if self.lock.locked():
+            raise Busy()
+        async with self.lock:
+            await self._ensure()
+            state = await self._kodi_state()
+            if not repair or state not in ("media", "missing"):
+                return {"state": state, "repaired": False}
+            await remote.adb("-s", self.serial, "shell", "-n", "am force-stop org.xbmc.kodi")
+            await remote.adb("-s", self.serial, "shell", "-n",
+                             "am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER "
+                             "-n org.xbmc.kodi/.Splash -f 0x10008000")
+            if await self._kodi_state() != "ready":
+                raise RuntimeError("Kodi neutral task could not be verified")
+            return {"state": "ready", "repaired": True}
+
     async def paste(self, text):
         packet = text_packet(text)
         if self.lock.locked():
@@ -340,6 +403,11 @@ def make_handler(device, loop, token, origin=None):
                     app = body.get("app")
                     app_packet(app)
                     operation = device.launch(app)
+                elif self.path == "/api/kodi":
+                    action = body.get("action")
+                    if action not in ("check", "repair"):
+                        raise ValueError()
+                    operation = device.kodi(repair=action == "repair")
                 elif self.path == "/api/mouse":
                     kind = body.get("kind")
                     if kind not in ("enable", "move", "click"):
@@ -357,7 +425,8 @@ def make_handler(device, loop, token, origin=None):
             future = asyncio.run_coroutine_threadsafe(operation, loop)
             try:
                 result = future.result(timeout=35)
-                self.respond(200, result if isinstance(result, bytes) else b'{"ok":true}',
+                self.respond(200, result if isinstance(result, bytes) else json.dumps(
+                    result if isinstance(result, dict) else {"ok": True}).encode(),
                              "image/png" if isinstance(result, bytes) else "application/json")
             except Busy:
                 self.respond(409, b'{"error":"busy"}')

@@ -85,6 +85,139 @@ class InputTest(unittest.IsolatedAsyncioTestCase):
             device.writer.write.assert_called_once_with(web.text_packet("Привіт 👋"))
 
 
+ACTIVITIES = """ACTIVITY MANAGER ACTIVITIES (dumpsys activity activities)
+    * TaskRecord example
+      intent={act=android.intent.action.VIEW dat=https://example.test/video cmp=org.xbmc.kodi/.Main}
+"""
+NEUTRAL_ACTIVITIES = """ACTIVITY MANAGER ACTIVITIES (dumpsys activity activities)
+      intent={act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=org.xbmc.kodi/.Main}
+"""
+SESSIONS = """MEDIA SESSION SERVICE (dumpsys media_session)
+  Sessions Stack - have 2 sessions:
+    XBMC_session org.xbmc.kodi/XBMC_session (userId=0)
+      ownerPid=123, ownerUid=10009, userId=0
+      package=org.xbmc.kodi
+      active=true
+      state=PlaybackState {state=2, position=1000, speed=0.0}
+    Bluetooth session
+      ownerPid=456, ownerUid=1002, userId=0
+      package=com.android.bluetooth
+      active=true
+      state=PlaybackState {state=3, position=0, speed=1.0}
+"""
+
+
+class KodiTest(unittest.IsolatedAsyncioTestCase):
+    async def run_kodi(self, *, repair=False, activities=ACTIVITIES, sessions=SESSIONS,
+                       installed=True, launch_succeeds=True):
+        device = web.Device()
+        device.serial = "test"
+        device._ensure = AsyncMock()
+        commands = []
+
+        async def adb(*args):
+            nonlocal activities, sessions
+            command = args[-1]
+            commands.append(command)
+            if command == "pm path org.xbmc.kodi || true":
+                return "package:/data/app/example/base.apk\n" if installed else ""
+            if command == "dumpsys activity activities":
+                return activities
+            if command == "dumpsys media_session":
+                return sessions
+            if command == "am force-stop org.xbmc.kodi":
+                return ""
+            if command.startswith("am start "):
+                self.assertIn("-f 0x10008000", command)
+                self.assertIn("-n org.xbmc.kodi/.Splash", command)
+                self.assertNotIn(" -d ", command)
+                if launch_succeeds:
+                    activities = NEUTRAL_ACTIVITIES
+                    sessions = SESSIONS.replace("active=true", "active=false", 1).replace(
+                        "state=PlaybackState {state=2, position=1000, speed=0.0}", "state=null")
+                return "Status: ok" if launch_succeeds else "Error: activity not found"
+            self.fail(f"Unexpected device command: {command}")
+
+        self.assertTrue(callable(getattr(device, "kodi", None)), "Kodi check/repair operation is missing")
+        with patch.object(web.remote, "adb", adb):
+            result = await device.kodi(repair=repair)
+        return result, commands
+
+    async def test_check_detects_media_uri_without_mutating_android(self):
+        result, commands = await self.run_kodi()
+        self.assertEqual(result, {"state": "media", "repaired": False})
+        self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_repair_replaces_media_task_with_neutral_task(self):
+        result, commands = await self.run_kodi(repair=True)
+        self.assertEqual(result, {"state": "ready", "repaired": True})
+        self.assertEqual(commands.count("am force-stop org.xbmc.kodi"), 1)
+
+    async def test_repair_is_idempotent_for_neutral_task(self):
+        result, commands = await self.run_kodi(repair=True, activities=NEUTRAL_ACTIVITIES)
+        self.assertEqual(result, {"state": "ready", "repaired": False})
+        self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_inactive_session_without_playback_is_a_clean_home_screen(self):
+        sessions = SESSIONS.replace("active=true", "active=false", 1).replace(
+            "state=PlaybackState {state=2, position=1000, speed=0.0}", "state=null")
+        result, commands = await self.run_kodi(repair=True, activities=NEUTRAL_ACTIVITIES, sessions=sessions)
+        self.assertEqual(result, {"state": "ready", "repaired": False})
+        self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_repair_initializes_missing_task(self):
+        result, _ = await self.run_kodi(repair=True, activities="""ACTIVITY MANAGER ACTIVITIES
+      intent={act=android.intent.action.MAIN cmp=example.launcher/.Home}
+""")
+        self.assertEqual(result, {"state": "ready", "repaired": True})
+
+    async def test_explicit_empty_session_stack_is_safe(self):
+        result, _ = await self.run_kodi(repair=True, sessions="""MEDIA SESSION SERVICE
+  Sessions Stack - have 0 sessions:
+""")
+        self.assertEqual(result, {"state": "ready", "repaired": True})
+
+    async def test_repair_refuses_active_or_unknown_playback(self):
+        for state in (3, 4, 5, 6, 8, 99):
+            with self.subTest(state=state):
+                sessions = SESSIONS.replace("{state=2,", f"{{state={state},", 1)
+                result, commands = await self.run_kodi(repair=True, sessions=sessions)
+                self.assertEqual(result, {"state": "playing", "repaired": False})
+                self.assertFalse(any(c.startswith("am ") for c in commands))
+        for sessions in ("", SESSIONS.replace("state=PlaybackState {state=2, position=1000, speed=0.0}", "state=null")):
+            result, commands = await self.run_kodi(repair=True, sessions=sessions)
+            self.assertEqual(result, {"state": "unknown", "repaired": False})
+            self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_repair_refuses_unknown_activity_format_or_missing_app(self):
+        for kwargs, state in (({"activities": "permission denied"}, "unknown"),
+                              ({"installed": False}, "not_installed")):
+            result, commands = await self.run_kodi(repair=True, **kwargs)
+            self.assertEqual(result, {"state": state, "repaired": False})
+            self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_incomplete_or_changed_dump_format_never_authorizes_restart(self):
+        cases = [
+            {"sessions": "MEDIA SESSION SERVICE (dumpsys media_session)\n"},
+            {"sessions": SESSIONS.replace("package=org.xbmc.kodi", "package=org.xbmc.kodi tag=Kodi").replace("{state=2,", "{state=3,", 1)},
+            {"sessions": SESSIONS.replace("package=org.xbmc.kodi", "package=org.xbmc.kodi,tag=Kodi").replace("{state=2,", "{state=3,", 1)},
+            {"sessions": SESSIONS.replace("have 2 sessions", "have 3 sessions")},
+            {"sessions": SESSIONS.replace("ownerPid=123", "ownerProcess=123")},
+            {"sessions": SESSIONS.replace("      active=true\n", "", 1)},
+            {"activities": "ACTIVITY MANAGER ACTIVITIES\n"},
+            {"activities": ACTIVITIES.replace("intent={", "baseIntent={") + "      intent={act=android.intent.action.MAIN cmp=example.launcher/.Home}\n"},
+        ]
+        for kwargs in cases:
+            with self.subTest(kwargs=kwargs):
+                result, commands = await self.run_kodi(repair=True, **kwargs)
+                self.assertEqual(result, {"state": "unknown", "repaired": False})
+                self.assertFalse(any(c.startswith("am ") for c in commands))
+
+    async def test_repair_verifies_result_instead_of_trusting_am_exit_status(self):
+        with self.assertRaises(RuntimeError):
+            await self.run_kodi(repair=True, launch_succeeds=False)
+
+
 class ScreenshotTest(unittest.IsolatedAsyncioTestCase):
     async def test_private_capture_is_removed_after_success(self):
         device = web.Device()
@@ -128,6 +261,7 @@ class WebTest(unittest.TestCase):
         cls.device.paste = AsyncMock(return_value=None)
         cls.device.mouse = AsyncMock(return_value=None)
         cls.device.launch = AsyncMock(return_value=None)
+        cls.device.kodi = AsyncMock(return_value={"state": "ready", "repaired": False})
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), web.make_handler(cls.device, cls.loop, "test-token"))
         cls.origin = f"http://127.0.0.1:{cls.server.server_port}"
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
@@ -190,6 +324,21 @@ class WebTest(unittest.TestCase):
 
     def test_get_cannot_send_commands(self):
         self.assertEqual(self.request("/api/key", method="GET")[0], 404)
+
+    def test_kodi_actions_return_state_and_require_valid_post(self):
+        status, data, _ = self.request("/api/kodi", {"action": "check"})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(data), {"state": "ready", "repaired": False})
+        self.device.kodi.assert_awaited_with(repair=False)
+        self.assertEqual(self.request("/api/kodi", {"action": "repair"})[0], 200)
+        self.device.kodi.assert_awaited_with(repair=True)
+        before = self.device.kodi.await_count
+        for body, kwargs, expected in (({"action": "repair; reboot"}, {}, 400),
+                                       ({"action": "repair"}, {"token": ""}, 403),
+                                       ({"action": "repair"}, {"origin": "https://example.test"}, 403),
+                                       ({"action": "repair"}, {"method": "GET"}, 404)):
+            self.assertEqual(self.request("/api/kodi", body, **kwargs)[0], expected)
+        self.assertEqual(self.device.kodi.await_count, before)
 
     def test_screenshot_is_explicit_and_not_cached(self):
         before = self.device.screenshot.await_count

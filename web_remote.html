@@ -17,6 +17,8 @@
 <div style="border-top:1px solid #303a48;padding-top:18px;margin-top:20px">
 <p data-i18n="quickLaunch" style="margin:0 0 12px;font-weight:600;color:#edf0f5">Швидкий запуск</p>
 <div style="display:grid;gap:10px"><button data-app="jellyfin">Jellyfin</button><button data-app="smarttube">SmartTube</button><button data-app="kodi">Kodi</button></div>
+<p class="hint" data-i18n="kodiHint">Якщо Kodi повторює стару серію, зупиніть відтворення й перевірте стан. Відновлення закриє Kodi та відкриє його головний екран зі збереженням налаштувань.</p>
+<div style="display:grid;gap:10px;margin-top:12px"><button id="kodi-check" data-i18n="kodiCheck">Перевірити Kodi</button><button id="kodi-repair" data-i18n="kodiRepair">Відновити Kodi</button></div>
 </div>
 </section>
 <section class="panel" aria-label="Знімок екрана" data-i18n-aria="snapshotLabel">
@@ -51,7 +53,15 @@ const translations={
     sending:'Sending…',sent:'Command sent.',opening:'Opening {app}…',launched:'Launch request for {app} sent.',refreshing:'Refreshing…',
     snapshotAt:'Screenshot: {time} · Updates on request.',textTooLong:'Text is too long. Send it in two parts.',pasting:'Pasting text…',
     textSent:'Text sent to the active field.',mouseError:'Could not capture the mouse. Click again and allow capture if your browser asks.',
-    mouseActive:'Mouse controls the projector · Esc to exit',clickBusy:'Wait for the pending clicks to finish.'
+    mouseActive:'Mouse controls the projector · Esc to exit',clickBusy:'Wait for the pending clicks to finish.',
+    kodiCheck:'Check Kodi',kodiRepair:'Restore Kodi',
+    kodiHint:'If Kodi repeats an old episode, stop playback and check its state. Restoring closes Kodi and opens its home screen, keeping its settings.',
+    kodiChecking:'Checking Kodi…',kodiRestoring:'Restoring Kodi…',kodiRestored:'Kodi restored. Choose the episode again in Jellyfin.',
+    kodi_ready:'Kodi already has a clean startup task. No changes needed.',
+    kodi_media:'Kodi’s startup task contains a video link. Stop playback, then restore Kodi if it repeats an old episode.',
+    kodi_missing:'Kodi has no startup task. Restore Kodi to prepare a clean one.',
+    kodi_playing:'Stop playback in Kodi before restoring it. Nothing was changed.',
+    kodi_unknown:'Cannot safely determine Kodi’s state. Nothing was changed.',kodi_not_installed:'Kodi is not installed on this projector.'
   },
   uk:{
     pageTitle:'Wanbo · Пульт',pageSuffix:'/ пульт',localTag:"На цьому комп'ютері",language:'Мова',remoteLabel:'Пульт проєктора',
@@ -69,7 +79,15 @@ const translations={
     sending:'Надсилання…',sent:'Команду надіслано.',opening:'Відкриваю {app}…',launched:'Запуск {app} надіслано.',refreshing:'Оновлення…',
     snapshotAt:'Знімок: {time} · Оновлюється за запитом.',textTooLong:'Текст задовгий. Надішліть його двома частинами.',pasting:'Вставлення тексту…',
     textSent:'Текст надіслано в активне поле.',mouseError:'Не вдалося захопити мишу. Натисніть ще раз і дозвольте доступ, якщо браузер запитує.',
-    mouseActive:'Миша керує проєктором · Esc — вийти',clickBusy:'Зачекайте завершення кліків.'
+    mouseActive:'Миша керує проєктором · Esc — вийти',clickBusy:'Зачекайте завершення кліків.',
+    kodiCheck:'Перевірити Kodi',kodiRepair:'Відновити Kodi',
+    kodiHint:'Якщо Kodi повторює стару серію, зупиніть відтворення й перевірте стан. Відновлення закриє Kodi та відкриє його головний екран зі збереженням налаштувань.',
+    kodiChecking:'Перевіряю Kodi…',kodiRestoring:'Відновлюю Kodi…',kodiRestored:'Kodi відновлено. Виберіть серію в Jellyfin знову.',
+    kodi_ready:'Kodi вже має чисте стартове завдання. Зміни не потрібні.',
+    kodi_media:'Стартове завдання Kodi містить посилання на відео. Зупиніть відтворення й відновіть Kodi, якщо він повторює стару серію.',
+    kodi_missing:'Kodi не має стартового завдання. Натисніть «Відновити Kodi», щоб створити чисте.',
+    kodi_playing:'Зупиніть відтворення в Kodi перед відновленням. Нічого не змінено.',
+    kodi_unknown:'Не вдалося безпечно визначити стан Kodi. Нічого не змінено.',kodi_not_installed:'Kodi не встановлено на цьому проєкторі.'
   }
 };
 const token='__TOKEN__',status=document.querySelector('#status'),buttons=[...document.querySelectorAll('[data-key]')];
@@ -114,6 +132,17 @@ document.querySelectorAll('[data-app]').forEach(button=>button.addEventListener(
   catch(error){showError(error);}
   finally{busy=false;button.disabled=false;}
 }));
+for(const action of ['check','repair'])document.querySelector('#kodi-'+action).addEventListener('click',async()=>{
+  if(busy)return;busy=true;
+  const controls=[document.querySelector('#kodi-check'),document.querySelector('#kodi-repair')];
+  controls.forEach(button=>button.disabled=true);setStatus(action==='check'?'kodiChecking':'kodiRestoring');
+  try{
+    const result=await (await request('/api/kodi',{action})).json();
+    const key='kodi_'+result.state;
+    setStatus(result.repaired?'kodiRestored':Object.hasOwn(translations[language],key)?key:'kodi_unknown');
+  }catch(error){showError(error);}
+  finally{busy=false;controls.forEach(button=>button.disabled=false);}
+});
 document.addEventListener('keydown',event=>{
   const keys={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',Enter:'ok',Escape:'back',Backspace:'back',Home:'home',KeyH:'home'};
   if(event.altKey||event.ctrlKey||event.metaKey)return;

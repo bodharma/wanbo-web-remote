@@ -1,0 +1,12 @@
+--- original/TvService$5.smali
++++ patched/TvService$5.smali
+@@ -97,5 +97,9 @@
+     .end local v2    # "e":Ljava/lang/Exception;
+     :cond_27
+     :goto_27
++    const-wide/16 v0, 0x64
++
++    invoke-static {v0, v1}, Landroid/os/SystemClock;->sleep(J)V
++
+     goto :goto_0
+ .end method

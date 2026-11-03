@@ -8,6 +8,8 @@ The interface supports **English / Українська**. It initially follows 
 
 For apps to install, a lighter home screen, animation settings, and Jellyfin / Kodi playback fixes, see the [projector setup and performance guide](docs/PROJECTOR_SETUP.md).
 
+The [firmware tuning notes](docs/FIRMWARE_TUNING.md) document the tested TvService CPU patch, USB boot-role/Wi-Fi recovery, and their limits. These are separate, optional projector modifications; the remote and Docker image never apply them.
+
 ## Requirements
 
 Docker with Compose v2 and network access from the container to the projector. On macOS, start OrbStack or Docker Desktop. The projector must already expose ADB over TCP, usually port `5555`; Developer options alone do not guarantee this. Mouse support requires ADB shell access to `/dev/uhid`.
@@ -111,7 +113,7 @@ On macOS check **System Settings → Privacy & Security → Local Network**: **O
 
 There is no login for remote users. Keep the loopback-only publication; do not expose the port to a LAN or the internet without separate authentication and HTTPS. The API checks Host, Origin and a page token, and accepts only defined actions. The container runs without root, with a read-only filesystem, without the Docker socket, USB, privileged mode or host networking.
 
-Android runs the official temporary scrcpy server with video, audio and automatic clipboard synchronization disabled. Wi-Fi, ADB settings and firmware are unchanged. Screenshots are captured privately and removed after transfer; a network failure during cleanup can leave a private temporary file until manually removed.
+Android runs the official temporary scrcpy server with video, audio and automatic clipboard synchronization disabled. The web remote does not change Wi-Fi, ADB settings or firmware. Screenshots are captured privately and removed after transfer; a network failure during cleanup can leave a private temporary file until manually removed.
 
 ## Development
 

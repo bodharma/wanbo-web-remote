@@ -8,3 +8,12 @@ __pycache__/
 .DS_Store
 scrcpy-server
 state/
+
+# Keep device firmware, compiled patches and private diagnostics out of Git.
+*.apk
+*.img
+*.dex
+*.odex
+*.vdex
+firmware-backups/
+diagnostics/

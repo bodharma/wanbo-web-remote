@@ -8,3 +8,10 @@ __pycache__
 .DS_Store
 state
 tests
+**/*.apk
+**/*.img
+**/*.dex
+**/*.odex
+**/*.vdex
+firmware-backups
+diagnostics

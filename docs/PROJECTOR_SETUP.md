@@ -45,6 +45,8 @@ adb shell am start -a android.settings.WIFI_SETTINGS
 
 Keep your physical remote and the current ADB connection available. Do not change Wi-Fi, disable Android Settings, or reboot as part of launcher tuning. Do not mass-disable packages: a name that looks like bloat can belong to projector controls.
 
+On this firmware, USB ADB configuration also affected the next boot's USB role and could hide the internal Wi-Fi adapter. Read the [USB boot-role findings and recovery requirements](FIRMWARE_TUNING.md) before making persistent ADB or firmware changes.
+
 ## Faster transitions
 
 Record the original values somewhere private:
@@ -150,6 +152,8 @@ On this unit, updating the old Google Play services installation restored sign-i
 
 ## Limits of stock-firmware tuning
 
-`com.toptech.tv.service` / TvService consumed roughly one CPU core in a thermal-monitoring loop on the tested firmware. It also controls projector hardware. **Do not disable the whole service, stop its thermal protection, or replace it with a generic Android TV service.** Restarting it can also change ADB availability. No permanent TvService or firmware patch is included here.
+`com.toptech.tv.service` / TvService consumed roughly one CPU core in a thermal-monitoring loop on the tested firmware. It also controls projector hardware. **Do not disable the whole service, stop its thermal protection, or replace it with a generic Android TV service.** Restarting it can also change ADB availability.
+
+A later firmware-specific modification added a 100 ms pause to that loop while retaining its 80°C protection branch. It survived a new boot and a 15-minute observation with median TvService CPU usage of 0.19% of one core. The [firmware notes](FIRMWARE_TUNING.md) include the source-diff reference, measured results, signature constraints and USB/Wi-Fi interaction. No installable firmware or modified APK is distributed here, and the Docker image does not perform this modification.
 
 For persistent freezes, collect a short private `adb shell top -b -n 1`, `adb shell dumpsys meminfo` and `adb logcat -d` capture around the failure; identify the process or decoder error before changing more settings. Review and redact logs before sharing them. These changes improve usability within the stock firmware's limits; they do not establish compatibility with another firmware or Linux.
